@@ -112,6 +112,14 @@ int main(const int argc, const char ** argv)
 		vector<future<duration<double, milli>>> tests;
 		for (auto innerIndex = 0; innerIndex < 4; ++innerIndex) tests.push_back(async([clients, index, innerIndex, request] 
 		{
+			auto bitsLeftToSend = sizeof(request);
+			auto bitsSent = 0;
+			while(bitsLeftToSend)
+			{
+				auto packetSize = send(clients[index + innerIndex], &request[bitsSent], sizeof(request), 0);
+				bitsSent += packetSize;
+				bitsLeftToSend -= packetSize;
+			}
 			send(clients[index + innerIndex], request, sizeof(request), 0);
 			auto start = steady_clock::now();
 			char signal;
@@ -130,8 +138,6 @@ int main(const int argc, const char ** argv)
 		wcout << L"Test: " << futures[number].get().count() << L" ms\r\n";
 		futures.erase(futures.begin() + number);
 	}
-	wcout << L"Press any key to continue . . .\r\n";
-	cin.ignore();
 	for (auto & client : clients) closesocket(client);
 	WSACleanup();
 	return 0;
