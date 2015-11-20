@@ -26,7 +26,7 @@ int WaitForAny(vector<future<T>> & futures)
 {
 	while(true)
 	{
-		for (auto index = 0; index < futures.size(); ++index)
+		for (auto index = 0; static_cast<unsigned int>(index) < futures.size(); ++index)
 		{
 			if (!futures[index].valid()) continue;
 			switch (futures[index].wait_for(seconds(0)))
@@ -108,7 +108,7 @@ int main(const int argc, const char ** argv)
 			return time;
 		}));
 		auto results = WaitForAll(tests);
-		auto sum = 0;
+		auto sum = static_cast<double>(0);
 		for (auto& resultingTime : results) sum += resultingTime.count();
 		return duration<double, milli> {sum / 4.0};
 	}));
