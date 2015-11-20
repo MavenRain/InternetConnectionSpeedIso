@@ -24,22 +24,24 @@ vector<T> WaitForAll(vector<future<T>> & futures)
 template<typename T>
 int WaitForAny(vector<future<T>> & futures)
 {
-	while(true)
+	for (auto index = 0; static_cast<unsigned int>(index) < futures.size(); )
 	{
-		for (auto index = 0; static_cast<unsigned int>(index) < futures.size(); ++index)
+		if (!futures[index].valid()) continue;
+		switch (futures[index].wait_for(seconds(0)))
 		{
-			if (!futures[index].valid()) continue;
-			switch (futures[index].wait_for(seconds(0)))
-			{
-			case future_status::ready:
-				return index;
-			case future_status::deferred:
-				break;
-			case future_status::timeout:
-				break;
-			}
+		case future_status::ready:
+			return index;
+		case future_status::deferred:
+			++index;
+			index %= futures.size();
+			break;
+		case future_status::timeout:
+			++index;
+			index %= futures.size();
+			break;
 		}
 	}
+	return 32768;
 }
 
 int main(const int argc, const char ** argv)
