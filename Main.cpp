@@ -62,6 +62,8 @@ int main(const int argc, const char ** argv)
 		if (!client)
 		{
 			wcout << L"There was an issue initializing the sockets.\r\n";
+			for (auto innerIndex = 0; innerIndex < index; ++innerIndex) closesocket(clients[innerIndex]);
+			WSACleanup();
 			return -8;
 		}
 		clients.push_back(client);
@@ -70,26 +72,36 @@ int main(const int argc, const char ** argv)
 	if (getaddrinfo("www.google.com", "80", nullptr, &result[0]))
 	{
 		wcout << L"There was an issue resolving the first host name.\r\n";
+		for (auto & client : clients) closesocket(client);
+		WSACleanup();
 		return -3;
 	}
 	if (getaddrinfo("www.microsoft.com", "80", nullptr, &result[1]))
 	{
 		wcout << L"There was an issue resolving the second host name.\r\n";
+		for (auto & client : clients) closesocket(client);
+		WSACleanup();
 		return -4;
 	}
 	if (getaddrinfo("www.alibaba.com", "80", nullptr, &result[2]))
 	{
 		wcout << L"There was an issue resolving the third host name.\r\n";
+		for (auto & client : clients) closesocket(client);
+		WSACleanup();
 		return -5;
 	}
 	if (getaddrinfo("www.apple.com", "80", nullptr, &result[3]))
 	{
 		wcout << L"There was an issue resolving the fourth host name.\r\n";
+		for (auto & client : clients) closesocket(client);
+		WSACleanup();
 		return -6;
 	}
 	for (auto index = 0; index < 4 * stoi(argv[1]); ++index) if (connect(clients[index], result[index % 4]->ai_addr, result[index % 4]->ai_addrlen))
 	{
 		wcout << L"There was an issue connecting each of the clients to their respective test endpoints.\r\n";
+		for (auto & client : clients) closesocket(client);
+		WSACleanup();
 		return -9;
 	}
 	auto request = "GET / HTTP/1.1";
@@ -104,8 +116,7 @@ int main(const int argc, const char ** argv)
 			auto start = steady_clock::now();
 			char signal;
 			recv(clients[index + innerIndex], &signal, 1, 0);
-			duration<double, milli> time { duration_cast<milliseconds>(steady_clock::now() - start) };
-			return time;
+			return duration<double, milli> { duration_cast<milliseconds>(steady_clock::now() - start) };
 		}));
 		auto results = WaitForAll(tests);
 		auto sum = static_cast<double>(0);
@@ -121,5 +132,7 @@ int main(const int argc, const char ** argv)
 	}
 	wcout << L"Press any key to continue . . .\r\n";
 	cin.ignore();
+	for (auto & client : clients) closesocket(client);
+	WSACleanup();
 	return 0;
 }
